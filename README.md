@@ -1,7 +1,7 @@
 # Minecraft browser port: patcher
 
-Sets up the Minecraft Java **1.19.4** or **1.18.2** browser port (TeaVM: WasmGC + JavaScript, with a Sodium-style
-renderer and FerriteCore memory savings) on your own machine.
+Sets up the Minecraft Java **1.19.4** or **1.18.2** browser port workspace consisting of a TeaVM port into WASM-GC
+and JavaScript. There are certain optimisations including a slight port of Sodium and FerriteCore for speed.
 
 **No Mojang code or assets are hosted here.** The patcher downloads the official client.jar, mappings, libraries and
 assets straight from Mojang's servers onto your machine (SHA-1 checked), then remaps, decompiles and builds locally.
@@ -18,7 +18,7 @@ curl -fsSL https://raw.githubusercontent.com/NT9712/eagler-1.18.2-1.19.4-patcher
 curl -fsSL https://raw.githubusercontent.com/NT9712/eagler-1.18.2-1.19.4-patcher/main/get.sh | bash -s -- 1.18.2
 ```
 
-Or grab `mc-<version>-web-patcher.zip` from [Releases](https://github.com/NT9712/eagler-1.18.2-1.19.4-patcher/releases), unzip it and
+Or just grab `mc-<version>-web-patcher.zip` from [Releases](https://github.com/NT9712/eagler-1.18.2-1.19.4-patcher/releases), unzip it and
 run `./install.sh`.
 
 ## After installing
