@@ -10,13 +10,13 @@ assets straight from Mojang's servers onto your machine (SHA-1 checked), then re
 
 ```bash
 # Minecraft 1.19.4
-curl -fsSL https://raw.githubusercontent.com/NT9712/mc-browser-patcher/main/get.sh | bash -s -- 1.19.4
+curl -fsSL https://raw.githubusercontent.com/NT9712/eagler-1.18.2-1.19.4-patcher/main/get.sh | bash -s -- 1.19.4
 # Minecraft 1.18.2
-curl -fsSL https://raw.githubusercontent.com/NT9712/mc-browser-patcher/main/get.sh | bash -s -- 1.18.2
+curl -fsSL https://raw.githubusercontent.com/NT9712/eagler-1.18.2-1.19.4-patcher/main/get.sh | bash -s -- 1.18.2
 ```
 
 This downloads the patcher into `./mc-<version>-web` and runs its `install.sh`. Or grab
-`mc-<version>-web-patcher.zip` from [Releases](https://github.com/NT9712/mc-browser-patcher/releases), unzip it and
+`mc-<version>-web-patcher.zip` from [Releases](https://github.com/NT9712/eagler-1.18.2-1.19.4-patcher/releases), unzip it and
 run `./install.sh`.
 
 ## After installing

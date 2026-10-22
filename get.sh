@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # One-liner installer for the Minecraft browser-port patcher.
-#   curl -fsSL https://raw.githubusercontent.com/NT9712/mc-browser-patcher/main/get.sh | bash -s -- 1.19.4
-#   curl -fsSL https://raw.githubusercontent.com/NT9712/mc-browser-patcher/main/get.sh | bash -s -- 1.18.2
+#   curl -fsSL https://raw.githubusercontent.com/NT9712/eagler-1.18.2-1.19.4-patcher/main/get.sh | bash -s -- 1.19.4
+#   curl -fsSL https://raw.githubusercontent.com/NT9712/eagler-1.18.2-1.19.4-patcher/main/get.sh | bash -s -- 1.18.2
 # Downloads the patcher zip from this repo's latest release into ./mc-<version>-web and runs its install.sh
 # (extra arguments are passed on, e.g. --yes --no-decompile). Set MC_DIR to choose another folder.
 set -euo pipefail
-REPO=NT9712/mc-browser-patcher
+REPO=NT9712/eagler-1.18.2-1.19.4-patcher
 VER=${1:-}; [ $# -gt 0 ] && shift
 if [ -z "$VER" ]; then
   if [ -r /dev/tty ]; then read -r -p "Minecraft version to set up (1.18.2 or 1.19.4) [1.19.4]: " VER < /dev/tty; fi
