@@ -5,10 +5,11 @@ renderer and FerriteCore memory savings) on your own machine.
 
 **No Mojang code or assets are hosted here.** The patcher downloads the official client.jar, mappings, libraries and
 assets straight from Mojang's servers onto your machine (SHA-1 checked), then remaps, decompiles and builds locally.
-**We, the v3sp1e's studio's team, do not take responsibility for any inappropriate usage of this repo in any way,
-shape or form. Note [MOJAND-READ.md](MOJANG-READ.md) for any legal complaints regarding this project.
 
-## One-liner
+**We, the v3sp1e's studio's team, do not take responsibility for any inappropriate usage of this repo in any way,
+shape or form. Note [MOJAND-READ.md](MOJANG-READ.md) for any legal complaints regarding this project.**
+
+## To install
 
 ```bash
 # Minecraft 1.19.4
@@ -17,8 +18,7 @@ curl -fsSL https://raw.githubusercontent.com/NT9712/eagler-1.18.2-1.19.4-patcher
 curl -fsSL https://raw.githubusercontent.com/NT9712/eagler-1.18.2-1.19.4-patcher/main/get.sh | bash -s -- 1.18.2
 ```
 
-This downloads the patcher into `./mc-<version>-web` and runs its `install.sh`. Or grab
-`mc-<version>-web-patcher.zip` from [Releases](https://github.com/NT9712/eagler-1.18.2-1.19.4-patcher/releases), unzip it and
+Or grab `mc-<version>-web-patcher.zip` from [Releases](https://github.com/NT9712/eagler-1.18.2-1.19.4-patcher/releases), unzip it and
 run `./install.sh`.
 
 ## After installing
