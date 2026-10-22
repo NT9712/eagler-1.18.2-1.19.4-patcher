@@ -9,6 +9,7 @@ assets straight from Mojang's servers onto your machine (SHA-1 checked), then re
 **We, the v3sp1e's studio's team, do not take responsibility for any inappropriate usage of this repo in any way,
 shape or form. Note [MOJAND-READ.md](MOJANG-READ.md) for any legal complaints regarding this project.**
 
+Demo at [1.18.2](https://mc-browser-1182-fireboy.netlify.app/) and [1.19.4](https://mc-browser-1194-fireboy.netlify.app/js/).
 ## To install
 
 ```bash
