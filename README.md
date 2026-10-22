@@ -5,6 +5,8 @@ renderer and FerriteCore memory savings) on your own machine.
 
 **No Mojang code or assets are hosted here.** The patcher downloads the official client.jar, mappings, libraries and
 assets straight from Mojang's servers onto your machine (SHA-1 checked), then remaps, decompiles and builds locally.
+**We, the v3sp1e's studio's team, do not take responsibility for any inappropriate usage of this repo in any way,
+shape or form. Note [MOJAND-READ.md](MOJANG-READ.md) for any legal complaints regarding this project.
 
 ## One-liner
 
@@ -32,12 +34,9 @@ Add `--wasm` or `--js` to build only one. The offline file re-encodes sound effe
 ## Requirements
 
 - Linux, macOS (Homebrew) or Windows via WSL, x86_64 or arm64
-- About 8 GB RAM and 9 GB free disk: the scripts check and stop with a notice otherwise
+- About 8 GB RAM and 9 GB free disk
 - Missing tools (curl, unzip, zip, python3, git, ffmpeg) are installed with your package manager; JDK 17, Gradle and
   Node are downloaded into the project's `tools/` folder
-
-Builds you make contain Mojang code and assets downloaded to your machine: they're for your own use, don't
-redistribute them.
 
 `src/` holds the patcher scripts; `src/make-zip.sh <repo> <version> <outdir>` builds a release zip from a checkout of
 the port.
