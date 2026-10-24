@@ -22,12 +22,13 @@ build_wasm() {
   bash scripts/04-assemble-wasm.sh > logs/assemble-wasm.log 2>&1 || die "WasmGC assembly failed, see logs/assemble-wasm.log"
   ok "browser/probe/build/site-wasm"
 }
-# Rebuild only when the port sources changed since the last build of that target.
+# Rebuild only when the port sources changed since the last build of that target. The resource zips in browser/web are
+# repacked by ensure_sounds on every run, so they don't count (package_target copies the current ones instead).
 need_build() {  # need_build js|wasm
   local stamp=browser/probe/build/.patcher-$1 site=browser/probe/build/site; [ $1 = wasm ] && site=browser/probe/build/site-wasm
   [ -d $site ] && [ -f $stamp ] || return 0
   [ -n "$(find eagler browser/probe/src browser/probe/*.gradle browser/web browser/web-wasm scripts work -newer $stamp -type f \
-          -not -path '*/build/*' -not -path 'browser/web/assets/*' 2>/dev/null | head -1)" ]
+          -not -path '*/build/*' -not -path 'browser/web/assets/*' -not -path 'browser/web/*.zip' 2>/dev/null | head -1)" ]
 }
 build_target() {  # build_target js|wasm
   if need_build $1; then
@@ -43,6 +44,7 @@ package_target() {
   rm -rf "$out"; mkdir -p "$out"
   step "Packaging $t -> $out"
   cp -L $(ls -d $site/* | grep -v '/assets$') "$out/"
+  cp browser/web/vanilla-resources.zip browser/web/game-assets.zip "$out/"   # current packs (sound list) even if the build was reused
   # first-run browser-friendly video options (same as the dist / live sites; ?vanillaOptions skips them)
   python3 patcher/lib/html-opts.py "$out/index.html" "$VER" "$t"
   # obfuscation

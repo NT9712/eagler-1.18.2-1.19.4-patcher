@@ -76,10 +76,13 @@ jobs:
           if ((Get-Content -Raw "$o\index.html") -match "`r") { throw 'index.html has CR characters' }
           if (-not (Test-Path "$env:MC_DIR\out\deploy-$env:VER-js.zip")) { throw 'missing deploy zip' }
           "{0} chunks, site {1:N0} MB, zip {2:N0} MB" -f $chunks.Count, ((Get-ChildItem -Recurse $o | Measure-Object Length -Sum).Sum/1MB), ((Get-Item "$env:MC_DIR\out\deploy-$env:VER-js.zip").Length/1MB)
-      - name: MakeOfflineDownload.cmd --js (reuses the build; ffmpeg re-encode, single-file html)
+      - name: MakeOfflineDownload.cmd --js (must reuse the build; ffmpeg re-encode, single-file html)
         if: env.BUILD == 'true'
-        shell: cmd
-        run: call "%MC_DIR%\MakeOfflineDownload.cmd" --js
+        shell: pwsh
+        run: |
+          & "$env:MC_DIR\MakeOfflineDownload.cmd" --js | Tee-Object -Variable log
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          if (-not ($log -match 'js build is up to date')) { throw 'the offline build recompiled instead of reusing the deployment build' }
       - name: Check the offline file
         if: env.BUILD == 'true'
         shell: pwsh
@@ -132,10 +135,11 @@ jobs:
           o="$MC_DIR/out/deploy-$VER-js"
           for f in index.html mcplatform.js serve.py vanilla-resources.zip game-assets.zip; do test -s "$o/$f" || { echo "missing $f"; exit 1; }; done
           test -s "$MC_DIR/out/deploy-$VER-js.zip"; ls "$o"/classes-*.js | wc -l; du -sh "$o" "$MC_DIR/out/deploy-$VER-js.zip"
-      - name: MakeOfflineDownload.sh --js (reuses the build)
+      - name: MakeOfflineDownload.sh --js (must reuse the build)
         if: env.BUILD == 'true'
         run: |
-          "$MC_DIR/MakeOfflineDownload.sh" --js
+          "$MC_DIR/MakeOfflineDownload.sh" --js | tee "$RUNNER_TEMP/offline.log"
+          grep -q 'js build is up to date' "$RUNNER_TEMP/offline.log" || { echo 'offline build recompiled instead of reusing the deployment build'; exit 1; }
           ls -la "$MC_DIR/out/Offline-$VER-JS.html"; test $(stat -c %s "$MC_DIR/out/Offline-$VER-JS.html") -gt 20000000
       - name: Logs on failure
         if: failure()
