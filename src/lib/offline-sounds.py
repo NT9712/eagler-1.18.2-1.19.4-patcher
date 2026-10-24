@@ -5,7 +5,7 @@ Sound effects: Ogg Vorbis q0 at 22.05 kHz (~4-5x smaller, from ~108 MB to ~25 MB
 MUSIC=1, then mono q0 22.05 kHz (~65 MB instead of ~357 MB). FULLQ=1 keeps the original files.
 Output: tools/cache/offline-sounds/<sha1-of-original>.<profile>.ogg and tools/cache/offline-sounds/set.json
 ({asset name: [original sha1, file]}). Re-encodes are cached between runs."""
-import glob, json, os, shutil, subprocess, sys
+import glob, json, os, shutil, subprocess, sys, time
 from concurrent.futures import ThreadPoolExecutor
 
 music, fullq = sys.argv[1] == '1', sys.argv[2] == '1'
@@ -34,12 +34,22 @@ def job(item):
             try: os.symlink(os.path.abspath(src), dst)  # keep the original when re-encoding doesn't help
             except OSError: shutil.copyfile(src, dst)    # Windows without symlink rights
         else:
-            os.replace(dst + '.part.ogg', dst)
+            for i in range(20):  # Windows: a scanner may still hold the fresh file for a moment
+                try: os.replace(dst + '.part.ogg', dst); break
+                except PermissionError:
+                    if i == 19: raise
+                    time.sleep(0.25)
     return k, h, dst
 
-seen = {}
+# Several asset names can share one object (same hash): encode each object once, or two threads would write the same
+# file at the same time (fails on Windows with WinError 32).
+def key(k, v): return (v['hash'], k.endswith('.json') or is_music(k), k.endswith('.json'))
+first = {}
+for k, v in sorted(want.items()):
+    first.setdefault(key(k, v), (k, v))
 with ThreadPoolExecutor(os.cpu_count() or 2) as ex:
-    res = list(ex.map(job, sorted(want.items())))
+    done = {key: r for key, r in zip(first, ex.map(job, first.values()))}
+res = [(k, v['hash'], done[key(k, v)][2]) for k, v in sorted(want.items())]
 out = {k: [h, f] for k, h, f in res}
 json.dump(out, open(OUT + '/set.json', 'w'))
 total = sum(os.path.getsize(f) for _, f in {h: f for _, h, f in res}.items())
