@@ -31,7 +31,7 @@ jobs:
       VER: ${{ matrix.ver }}
       MC_DIR: C:\mc\mc-${{ matrix.ver }}-web
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Machine
         shell: pwsh
         run: |
@@ -76,6 +76,17 @@ jobs:
           if ((Get-Content -Raw "$o\index.html") -match "`r") { throw 'index.html has CR characters' }
           if (-not (Test-Path "$env:MC_DIR\out\deploy-$env:VER-js.zip")) { throw 'missing deploy zip' }
           "{0} chunks, site {1:N0} MB, zip {2:N0} MB" -f $chunks.Count, ((Get-ChildItem -Recurse $o | Measure-Object Length -Sum).Sum/1MB), ((Get-Item "$env:MC_DIR\out\deploy-$env:VER-js.zip").Length/1MB)
+      - name: MakeOfflineDownload.cmd --js (reuses the build; ffmpeg re-encode, single-file html)
+        if: env.BUILD == 'true'
+        shell: cmd
+        run: call "%MC_DIR%\MakeOfflineDownload.cmd" --js
+      - name: Check the offline file
+        if: env.BUILD == 'true'
+        shell: pwsh
+        run: |
+          $f = Get-Item "$env:MC_DIR\out\Offline-$env:VER-JS.html"
+          if ($f.Length -lt 20MB) { throw "offline html too small: $($f.Length)" }
+          "{0:N0} MB" -f ($f.Length/1MB)
       - name: Logs on failure
         if: failure()
         shell: bash
@@ -94,7 +105,7 @@ jobs:
       VER: ${{ matrix.ver }}
       MC_DIR: ${{ github.workspace }}/../mc-${{ matrix.ver }}-web
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: client.jar URL from Mojang's version manifest
         run: |
           u=$(curl -fsSL https://piston-meta.mojang.com/mc/game/version_manifest_v2.json | python3 -c 'import json,sys,urllib.request; v=[x for x in json.load(sys.stdin)["versions"] if x["id"]==sys.argv[1]][0]; print(json.load(urllib.request.urlopen(v["url"]))["downloads"]["client"]["url"])' "$VER")
@@ -121,6 +132,11 @@ jobs:
           o="$MC_DIR/out/deploy-$VER-js"
           for f in index.html mcplatform.js serve.py vanilla-resources.zip game-assets.zip; do test -s "$o/$f" || { echo "missing $f"; exit 1; }; done
           test -s "$MC_DIR/out/deploy-$VER-js.zip"; ls "$o"/classes-*.js | wc -l; du -sh "$o" "$MC_DIR/out/deploy-$VER-js.zip"
+      - name: MakeOfflineDownload.sh --js (reuses the build)
+        if: env.BUILD == 'true'
+        run: |
+          "$MC_DIR/MakeOfflineDownload.sh" --js
+          ls -la "$MC_DIR/out/Offline-$VER-JS.html"; test $(stat -c %s "$MC_DIR/out/Offline-$VER-JS.html") -gt 20000000
       - name: Logs on failure
         if: failure()
         run: |

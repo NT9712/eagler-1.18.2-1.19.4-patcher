@@ -9,5 +9,5 @@ opts = r'renderDistance:6\nsimulationDistance:5\nrenderClouds:"fast"\nentityShad
 tag = "<head><script>if(window.mcOptions===undefined&&!/[?&]vanillaOptions\\b/.test(location.search))window.mcOptions='" + opts + "';</script>"
 if 'window.mcOptions' not in s:
     s = s.replace('<head>', tag, 1)
-s = re.sub(r'<title>.*?</title>', '<title>Minecraft %s%s</title>' % (ver, ' (WasmGC)' if t == 'wasm' else ''), s, 1)
+s = re.sub(r'<title>.*?</title>', '<title>Minecraft %s%s</title>' % (ver, ' (WasmGC)' if t == 'wasm' else ''), s, count=1)
 open(p, 'w').write(s)
