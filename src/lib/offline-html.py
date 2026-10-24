@@ -97,6 +97,7 @@ for(var i=0;i<c.length;i++){if(st)st.textContent='Loading '+(i+1)+'/'+c.length+'
  var t=new TextDecoder().decode(await __mcBytes(c[i]));var s=document.createElement('script');s.text=t;document.body.appendChild(s);t=null;s.text='';}
 if(st)st.textContent='Starting…';main([]);})().catch(function(e){console.error('[offline] '+(e&&e.stack||e));});
 """
+if os.name == 'nt' and os.path.exists(terser + '.cmd'): terser += '.cmd'  # npm's Windows shim
 def mini(code):
     with tempfile.NamedTemporaryFile('w', suffix='.js', delete=False) as f: f.write(code); n = f.name
     try: return subprocess.run([terser, n, '-c', '-m'], capture_output=True, text=True, check=True).stdout.strip()

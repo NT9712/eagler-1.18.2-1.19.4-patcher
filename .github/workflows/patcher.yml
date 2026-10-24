@@ -1,0 +1,124 @@
+# End-to-end test of the patcher on real machines: the Windows path (get.ps1 -> install.cmd -> install.ps1 -> Git Bash)
+# and the Linux path (get.sh -> install.sh), each for both Minecraft versions, then a JS deployment build.
+# client.jar is taken from the piston-data URL listed in Mojang's official version manifest (SHA-1 checked by install.sh).
+# Nothing Mojang is cached or uploaded as an artifact: everything stays on the throwaway runner.
+name: patcher
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['**.md']
+  workflow_dispatch:
+    inputs:
+      build:
+        description: 'Also run MakeDeploymentPackage --js'
+        type: boolean
+        default: true
+permissions:
+  contents: read
+concurrency:
+  group: patcher-${{ github.ref }}
+  cancel-in-progress: true
+env:
+  BUILD: ${{ github.event_name == 'push' || inputs.build }}
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 330
+    strategy:
+      fail-fast: false
+      matrix:
+        ver: ['1.19.4', '1.18.2']
+    env:
+      VER: ${{ matrix.ver }}
+      MC_DIR: C:\mc\mc-${{ matrix.ver }}-web
+    steps:
+      - uses: actions/checkout@v4
+      - name: Machine
+        shell: pwsh
+        run: |
+          Get-PSDrive -PSProvider FileSystem | Format-Table Name, @{n='FreeGB';e={[int]($_.Free/1GB)}}
+          "RAM GB: " + [int]((Get-CimInstance Win32_ComputerSystem).TotalPhysicalMemory/1GB)
+          foreach ($t in 'git','bash','python','py','ffmpeg','winget','choco','scoop','java','node','zip') { $c = Get-Command $t -ErrorAction SilentlyContinue; "{0,-7} {1}" -f $t, $(if ($c) { $c.Source } else { '-' }) }
+      - name: client.jar URL from Mojang's version manifest
+        shell: pwsh
+        run: |
+          $m = Invoke-RestMethod https://piston-meta.mojang.com/mc/game/version_manifest_v2.json
+          $v = $m.versions | Where-Object id -eq $env:VER
+          $u = (Invoke-RestMethod $v.url).downloads.client.url
+          if ($u -notlike 'https://piston-data.mojang.com/*') { throw "unexpected client URL $u" }
+          "MC_CLIENT_URL=$u" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
+          $u
+      - name: get.ps1 (Windows PowerShell 5.1, download + unpack the latest release zip)
+        shell: powershell
+        env:
+          MC_NO_INSTALL: '1'
+        run: |
+          New-Item -ItemType Directory -Force C:\mc | Out-Null
+          Set-Location C:\mc
+          & ([scriptblock]::Create((Get-Content -Raw "$env:GITHUB_WORKSPACE\get.ps1"))) $env:VER
+          if (-not (Test-Path "$env:MC_DIR\install.sh")) { throw 'patcher not unpacked' }
+      - name: Overlay the patcher scripts from this commit
+        shell: bash
+        run: bash src/apply-patcher.sh "$(cygpath -u "$MC_DIR")" "$VER"
+      - name: install.cmd (deps via winget/choco, then install.sh in Git Bash)
+        shell: cmd
+        run: call "%MC_DIR%\install.cmd" --yes
+      - name: MakeDeploymentPackage.cmd --js
+        if: env.BUILD == 'true'
+        shell: cmd
+        run: call "%MC_DIR%\MakeDeploymentPackage.cmd" --js
+      - name: Check the build
+        if: env.BUILD == 'true'
+        shell: pwsh
+        run: |
+          $o = "$env:MC_DIR\out\deploy-$env:VER-js"
+          foreach ($f in 'index.html', 'mcplatform.js', 'serve.py', 'vanilla-resources.zip', 'game-assets.zip') { if (-not (Test-Path "$o\$f")) { throw "missing $f" } }
+          $chunks = @(Get-ChildItem "$o\classes-*.js"); if ($chunks.Count -lt 5) { throw "only $($chunks.Count) classes chunks" }
+          if ((Get-Content -Raw "$o\index.html") -match "`r") { throw 'index.html has CR characters' }
+          if (-not (Test-Path "$env:MC_DIR\out\deploy-$env:VER-js.zip")) { throw 'missing deploy zip' }
+          "{0} chunks, site {1:N0} MB, zip {2:N0} MB" -f $chunks.Count, ((Get-ChildItem -Recurse $o | Measure-Object Length -Sum).Sum/1MB), ((Get-Item "$env:MC_DIR\out\deploy-$env:VER-js.zip").Length/1MB)
+      - name: Logs on failure
+        if: failure()
+        shell: bash
+        run: |
+          cd "$(cygpath -u "$MC_DIR")/logs" 2>/dev/null || exit 0
+          for f in *.log; do echo "::group::$f"; tail -n 80 "$f"; echo "::endgroup::"; done
+
+  linux:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    strategy:
+      fail-fast: false
+      matrix:
+        ver: ['1.19.4', '1.18.2']
+    env:
+      VER: ${{ matrix.ver }}
+      MC_DIR: ${{ github.workspace }}/../mc-${{ matrix.ver }}-web
+    steps:
+      - uses: actions/checkout@v4
+      - name: client.jar URL from Mojang's version manifest
+        run: |
+          u=$(curl -fsSL https://piston-meta.mojang.com/mc/game/version_manifest_v2.json | python3 -c 'import json,sys,urllib.request; v=[x for x in json.load(sys.stdin)["versions"] if x["id"]==sys.argv[1]][0]; print(json.load(urllib.request.urlopen(v["url"]))["downloads"]["client"]["url"])' "$VER")
+          case "$u" in https://piston-data.mojang.com/*) ;; *) echo "unexpected $u"; exit 1 ;; esac
+          echo "MC_CLIENT_URL=$u" >> "$GITHUB_ENV"; echo "$u"
+      - name: get.sh (download + unpack the latest release zip)
+        run: MC_NO_INSTALL=1 bash get.sh "$VER"
+      - name: Overlay the patcher scripts from this commit
+        run: bash src/apply-patcher.sh "$MC_DIR" "$VER"
+      - name: install.sh
+        run: '"$MC_DIR/install.sh" --yes'
+      - name: MakeDeploymentPackage.sh --js
+        if: env.BUILD == 'true'
+        run: '"$MC_DIR/MakeDeploymentPackage.sh" --js'
+      - name: Check the build
+        if: env.BUILD == 'true'
+        run: |
+          o="$MC_DIR/out/deploy-$VER-js"
+          for f in index.html mcplatform.js serve.py vanilla-resources.zip game-assets.zip; do test -s "$o/$f" || { echo "missing $f"; exit 1; }; done
+          test -s "$MC_DIR/out/deploy-$VER-js.zip"; ls "$o"/classes-*.js | wc -l; du -sh "$o" "$MC_DIR/out/deploy-$VER-js.zip"
+      - name: Logs on failure
+        if: failure()
+        run: |
+          cd "$MC_DIR/logs" 2>/dev/null || exit 0
+          for f in *.log; do echo "::group::$f"; tail -n 80 "$f"; echo "::endgroup::"; done

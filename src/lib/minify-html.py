@@ -3,6 +3,7 @@
 whitespace between tags."""
 import re, subprocess, sys, tempfile, os
 p, terser = sys.argv[1], sys.argv[2]
+if os.name == 'nt' and os.path.exists(terser + '.cmd'): terser += '.cmd'  # npm's Windows shim
 s = open(p).read()
 def mini(m):
     code = m.group(2)

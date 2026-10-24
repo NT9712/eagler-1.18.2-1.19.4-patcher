@@ -3,7 +3,8 @@
 #   curl -fsSL https://raw.githubusercontent.com/NT9712/eagler-1.18.2-1.19.4-patcher/main/get.sh | bash -s -- 1.19.4
 #   curl -fsSL https://raw.githubusercontent.com/NT9712/eagler-1.18.2-1.19.4-patcher/main/get.sh | bash -s -- 1.18.2
 # Downloads the patcher zip from this repo's latest release into ./mc-<version>-web and runs its install.sh
-# (extra arguments are passed on, e.g. --yes --no-decompile). Set MC_DIR to choose another folder.
+# (extra arguments are passed on, e.g. --yes --no-decompile). Set MC_DIR to choose another folder, MC_NO_INSTALL=1 to only unpack.
+# Windows: use get.ps1 (PowerShell) instead.
 set -euo pipefail
 REPO=NT9712/eagler-1.18.2-1.19.4-patcher
 VER=${1:-}; [ $# -gt 0 ] && shift
@@ -31,5 +32,6 @@ curl -fSL --retry 3 --progress-bar "https://github.com/$REPO/releases/latest/dow
 unzip -q "$TMP/p.zip" -d "$TMP"
 mkdir -p "$DIR"; cp -R "$TMP/mc-$VER-web/." "$DIR/"
 echo "-> patcher unpacked in $DIR"
+[ "${MC_NO_INSTALL:-0}" = 1 ] && exit 0
 cd "$DIR"
 if [ -r /dev/tty ]; then exec ./install.sh "$@" < /dev/tty; else exec ./install.sh --yes "$@"; fi

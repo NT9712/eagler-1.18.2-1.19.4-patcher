@@ -1,0 +1,9 @@
+# Bash/Python must keep LF even when this repo is cloned on Windows (core.autocrlf), or Git Bash chokes on \r.
+*.sh   text eol=lf
+*.py   text eol=lf
+*.cfg  text eol=lf
+src/lib/* text eol=lf
+# cmd.exe needs CRLF.
+*.cmd  text eol=crlf
+*.bat  text eol=crlf
+*.ps1  text

@@ -4,10 +4,12 @@
 # (piston-data / piston-meta / libraries.minecraft.net / resources.download.minecraft.net) onto YOUR machine,
 # verifies their SHA-1, remaps and decompiles the client, and leaves a workspace laid out like the private repo.
 #
-# Usage: ./install.sh [--yes] [--no-decompile] [--no-sounds]
-#   --yes           don't ask before installing missing system packages
-#   --no-decompile  skip the Vineflower decompile (decompiled/ is reference only; the build doesn't need it)
-#   --no-sounds     skip the ~470 MB of sound objects (the Make* scripts will fetch them when needed)
+# Usage: ./install.sh [--yes] [--no-decompile] [--no-sounds] [--client-url=URL]
+#   --yes             don't ask before installing missing system packages
+#   --no-decompile    skip the Vineflower decompile (decompiled/ is reference only; the build doesn't need it)
+#   --no-sounds       skip the ~470 MB of sound objects (the Make* scripts will fetch them when needed)
+#   --client-url=URL  take client.jar from this piston-data URL (or $MC_CLIENT_URL); its SHA-1 must still match
+#   On Windows run install.ps1 / install.cmd instead: it installs Git Bash, Python and ffmpeg, then runs this script.
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")"
 WS=$PWD
@@ -16,9 +18,11 @@ WS=$PWD
 
 YES=0; DECOMPILE=1; SOUNDS=1
 for a in "$@"; do case "$a" in
-  --yes|-y) YES=1 ;; --no-decompile) DECOMPILE=0 ;; --no-sounds) SOUNDS=0 ;;
-  -h|--help) sed -n 2,12p "$0"; exit 0 ;; *) die "unknown option $a" ;; esac; done
+  --yes|-y) YES=1 ;; --no-decompile) DECOMPILE=0 ;; --no-sounds) SOUNDS=0 ;; --client-url=*) MC_CLIENT_URL=${a#*=} ;;
+  -h|--help) sed -n 2,14p "$0"; exit 0 ;; *) die "unknown option $a" ;; esac; done
 
+CLIENT_URL=${MC_CLIENT_URL:-$CLIENT_URL}
+case "$CLIENT_URL" in https://piston-data.mojang.com/*|https://launcher.mojang.com/*) ;; *) die "client URL must be a Mojang piston-data URL: $CLIENT_URL" ;; esac
 say "Minecraft $VER browser port: workspace setup"
 check_platform
 check_resources
@@ -72,6 +76,16 @@ gradle_run --offline classes >/dev/null 2>&1 || gradle_run classes > logs/gradle
 
 touch .patcher-installed
 say "Done. Workspace ready in $WS"
+if [ "$OS" = windows ]; then cat <<EOF
+
+  Next (PowerShell or cmd, in this folder):
+    .\\MakeDeploymentPackage.cmd          obfuscated WasmGC and JS folders (+ .zip) for Netlify or localhost
+    .\\MakeOfflineDownload.cmd            single-file offline .html (WasmGC and JS)
+    Add --wasm or --js to build only one. Builds take ~20-40 min each on a typical machine.
+
+  Everything Mojang in this folder came from Mojang's servers to this machine. Don't publish this folder.
+EOF
+exit 0; fi
 cat <<EOF
 
   Next:

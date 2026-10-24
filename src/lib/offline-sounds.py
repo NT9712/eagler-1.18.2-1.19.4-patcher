@@ -5,7 +5,7 @@ Sound effects: Ogg Vorbis q0 at 22.05 kHz (~4-5x smaller, from ~108 MB to ~25 MB
 MUSIC=1, then mono q0 22.05 kHz (~65 MB instead of ~357 MB). FULLQ=1 keeps the original files.
 Output: tools/cache/offline-sounds/<sha1-of-original>.<profile>.ogg and tools/cache/offline-sounds/set.json
 ({asset name: [original sha1, file]}). Re-encodes are cached between runs."""
-import glob, json, os, subprocess, sys
+import glob, json, os, shutil, subprocess, sys
 from concurrent.futures import ThreadPoolExecutor
 
 music, fullq = sys.argv[1] == '1', sys.argv[2] == '1'
@@ -31,7 +31,8 @@ def job(item):
                            + ['-map_metadata', '-1', dst + '.part.ogg'], capture_output=True)
         if r.returncode != 0 or os.path.getsize(dst + '.part.ogg') >= os.path.getsize(src):
             if os.path.exists(dst + '.part.ogg'): os.remove(dst + '.part.ogg')
-            os.symlink(os.path.abspath(src), dst)  # keep the original when re-encoding doesn't help
+            try: os.symlink(os.path.abspath(src), dst)  # keep the original when re-encoding doesn't help
+            except OSError: shutil.copyfile(src, dst)    # Windows without symlink rights
         else:
             os.replace(dst + '.part.ogg', dst)
     return k, h, dst

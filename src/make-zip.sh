@@ -10,11 +10,7 @@ EXCL='^(original|remapped|mappings|decompiled|libs|dist)/|^meta/assets/|^meta/[^
 # keep TeaVM's own (Apache-2.0) jars that the build uses
 (cd "$REPO" && git ls-files 'tools/teavm-cli.jar' 'tools/teavm-src/*.jar' >> "$S/files")
 (cd "$REPO" && tar cf - -T "$S/files") | (cd "$D" && tar xf -)
-mkdir -p "$D/patcher/lib"
-cp "$P/cfg/$VER.cfg" "$D/patcher/patcher.cfg"
-cp "$P"/lib/* "$D/patcher/lib/"
-for f in install.sh MakeDeploymentPackage.sh MakeOfflineDownload.sh; do sed "s/@VER@/$VER/g" "$P/$f" > "$D/$f"; chmod +x "$D/$f"; done
-sed "s/@VER@/$VER/g" "$P/PATCHER.md" > "$D/PATCHER.md"
+"$P/apply-patcher.sh" "$D" "$VER"
 # safety net: nothing Mojang-shaped may be in the zip
 bad=$(cd "$D" && find . \( -name '*.class' -o -name 'client.jar' -o -name 'client.txt' -o -name '*.ogg' -o -name '*.png' -o -path './decompiled*' -o -path './libs/*' \) | head -5)
 [ -z "$bad" ] || { echo "Mojang-looking files in patcher: $bad"; exit 1; }

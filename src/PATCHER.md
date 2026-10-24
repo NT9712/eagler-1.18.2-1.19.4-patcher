@@ -5,10 +5,16 @@ savings, build scripts) **without any Mojang code or assets**. `install.sh` down
 your machine and builds the full workspace.
 
 ## Requirements
-- Linux, macOS (with Homebrew) or Windows via WSL; x86_64 or arm64
+- Linux, macOS (with Homebrew) or Windows 10/11 (natively through Git Bash, or WSL); x86_64 or arm64
 - ~8 GB RAM and ~9 GB free disk (the scripts check and stop with a notice if not)
 - Missing tools (curl, unzip, zip, python3, git, ffmpeg) are installed with your package manager. JDK 17,
   Gradle 8.10.2 and Node 22 are downloaded into `tools/` (nothing installed system-wide).
+
+## Windows
+Use the `.cmd` files (or the `.ps1` files they run) instead of the `.sh` ones, from PowerShell or cmd in this folder:
+`install.cmd`, `MakeDeploymentPackage.cmd`, `MakeOfflineDownload.cmd`, with the same options. `install.cmd` checks
+RAM/disk, installs Git for Windows, Python 3 and ffmpeg with winget (or Chocolatey / Scoop) if they're missing, then
+runs the same `install.sh` in Git Bash. JDK 17, Gradle and Node still go into `tools/`.
 
 ## Steps
 1. `./install.sh`: checks the machine, fetches client.jar (@VER@, SHA-1 checked) from piston-data.mojang.com plus
