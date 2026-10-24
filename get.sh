@@ -8,8 +8,11 @@
 set -euo pipefail
 REPO=NT9712/eagler-1.18.2-1.19.4-patcher
 VER=${1:-}; [ $# -gt 0 ] && shift
+# A usable terminal? `[ -r /dev/tty ]` isn't enough: without a controlling terminal (CI, Codespaces tasks, ssh -T)
+# /dev/tty exists but can't be opened. PATCHER_YES=1 forces the non-interactive path (defaults, no questions).
+tty_ok() { [ "${PATCHER_YES:-0}" != 1 ] && ( : < /dev/tty ) 2>/dev/null; }
 if [ -z "$VER" ]; then
-  if [ -r /dev/tty ]; then read -r -p "Minecraft version to set up (1.18.2 or 1.19.4) [1.19.4]: " VER < /dev/tty; fi
+  if tty_ok; then read -r -p "Minecraft version to set up (1.18.2 or 1.19.4) [1.19.4]: " VER < /dev/tty || VER=""; fi
   VER=${VER:-1.19.4}
 fi
 case "$VER" in 1.18.2|1.19.4) ;; *) echo "Unknown version '$VER' (use 1.18.2 or 1.19.4)" >&2; exit 1 ;; esac
@@ -32,6 +35,8 @@ curl -fSL --retry 3 --progress-bar "https://github.com/$REPO/releases/latest/dow
 unzip -q "$TMP/p.zip" -d "$TMP"
 mkdir -p "$DIR"; cp -R "$TMP/mc-$VER-web/." "$DIR/"
 echo "-> patcher unpacked in $DIR"
+# PATCHER_OVERLAY=DIR: put the patcher scripts from DIR (a checkout's src/) over the release ones (used by CI)
+[ -n "${PATCHER_OVERLAY:-}" ] && bash "$PATCHER_OVERLAY/apply-patcher.sh" "$DIR" "$VER"
 [ "${MC_NO_INSTALL:-0}" = 1 ] && exit 0
 cd "$DIR"
-if [ -r /dev/tty ]; then exec ./install.sh "$@" < /dev/tty; else exec ./install.sh --yes "$@"; fi
+if tty_ok; then exec ./install.sh "$@" < /dev/tty; else echo "-> no terminal: installing non-interactively (--yes)"; exec ./install.sh --yes "$@"; fi

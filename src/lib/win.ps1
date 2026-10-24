@@ -65,7 +65,7 @@ function Find-Python {
   }
   foreach ($t in $tries) {
     try {
-      $exe = $t[0]; $a = @($t | Select-Object -Skip 1) + @('-c', 'import sys; print(sys.executable if sys.version_info >= (3, 8) else "")')
+      $exe = $t[0]; $a = @($t | Select-Object -Skip 1) + @('-c', 'import sys; sys.version_info >= (3, 8) and print(sys.executable)')  # no quotes: PS 5.1 mangles them
       $out = & $exe @a 2>$null
       if ($LASTEXITCODE -eq 0 -and $out -and (Test-Path "$out".Trim())) { return "$out".Trim() }
     } catch {}
@@ -120,8 +120,8 @@ function Install-Deps([switch]$Yes) {
     if (-not (Get-Command winget, choco, scoop -ErrorAction SilentlyContinue)) {
       Notice-Exit "Missing: $($miss -join ', '). No winget, Chocolatey or Scoop found to install them. Install Git for Windows, Python 3 and ffmpeg yourself (or get winget: 'App Installer' from the Microsoft Store) and rerun."
     }
-    if (-not $Yes -and [Environment]::UserInteractive -and -not [Console]::IsInputRedirected) {
-      $a = Read-Host "Install missing tools: $($miss -join ', ') ? [Y/n]"
+    if (-not $Yes -and $env:PATCHER_YES -ne '1' -and [Environment]::UserInteractive -and -not [Console]::IsInputRedirected) {
+      $a = $null; try { $a = Read-Host "Install missing tools: $($miss -join ', ') ? [Y/n]" } catch {}
       if ($a -match '^[nN]') { Notice-Exit "Missing dependencies: $($miss -join ', ')" }
     }
     foreach ($m in $miss) { if (-not (Install-Tool $m)) { Die "Could not install $m. Install it yourself and rerun." } }

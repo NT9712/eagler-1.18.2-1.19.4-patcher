@@ -5,7 +5,7 @@
 # verifies their SHA-1, remaps and decompiles the client, and leaves a workspace laid out like the private repo.
 #
 # Usage: ./install.sh [--yes] [--no-decompile] [--no-sounds] [--client-url=URL]
-#   --yes             don't ask before installing missing system packages
+#   --yes             don't ask before installing missing system packages (same as PATCHER_YES=1)
 #   --no-decompile    skip the Vineflower decompile (decompiled/ is reference only; the build doesn't need it)
 #   --no-sounds       skip the ~470 MB of sound objects (the Make* scripts will fetch them when needed)
 #   --client-url=URL  take client.jar from this piston-data URL (or $MC_CLIENT_URL); its SHA-1 must still match
@@ -17,6 +17,7 @@ WS=$PWD
 . patcher/lib/common.sh
 
 YES=0; DECOMPILE=1; SOUNDS=1
+[ "${PATCHER_YES:-0}" = 1 ] && YES=1
 for a in "$@"; do case "$a" in
   --yes|-y) YES=1 ;; --no-decompile) DECOMPILE=0 ;; --no-sounds) SOUNDS=0 ;; --client-url=*) MC_CLIENT_URL=${a#*=} ;;
   -h|--help) sed -n 2,14p "$0"; exit 0 ;; *) die "unknown option $a" ;; esac; done

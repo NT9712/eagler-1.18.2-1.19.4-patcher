@@ -15,7 +15,7 @@ $Ver = $null
 if ($Rest.Count -gt 0 -and $Rest[0] -notlike '-*') { $Ver = $Rest[0]; $Rest = @($Rest | Select-Object -Skip 1) }
 if (-not $Ver) { $Ver = $env:MC_VERSION }
 if (-not $Ver) {
-  try { if ([Environment]::UserInteractive -and -not [Console]::IsInputRedirected) { $Ver = Read-Host 'Minecraft version to set up (1.18.2 or 1.19.4) [1.19.4]' } } catch {}
+  try { if ($env:PATCHER_YES -ne '1' -and [Environment]::UserInteractive -and -not [Console]::IsInputRedirected) { $Ver = Read-Host 'Minecraft version to set up (1.18.2 or 1.19.4) [1.19.4]' } } catch {}
   if (-not $Ver) { $Ver = '1.19.4' }
 }
 if ($Ver -notin '1.18.2', '1.19.4') { Write-Host "Unknown version '$Ver' (use 1.18.2 or 1.19.4)" -ForegroundColor Red; return }

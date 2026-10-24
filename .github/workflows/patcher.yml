@@ -1,5 +1,6 @@
 # End-to-end test of the patcher on real machines: the Windows path (get.ps1 -> install.cmd -> install.ps1 -> Git Bash)
-# and the Linux path (get.sh -> install.sh), each for both Minecraft versions, then a JS deployment build.
+# and the Linux path (get.sh -> install.sh, run with no terminal at all), each for both Minecraft versions, then a JS
+# deployment build.
 # client.jar is taken from the piston-data URL listed in Mojang's official version manifest (SHA-1 checked by install.sh).
 # Nothing Mojang is cached or uploaded as an artifact: everything stays on the throwaway runner.
 name: patcher
@@ -102,12 +103,18 @@ jobs:
           u=$(curl -fsSL https://piston-meta.mojang.com/mc/game/version_manifest_v2.json | python3 -c 'import json,sys,urllib.request; v=[x for x in json.load(sys.stdin)["versions"] if x["id"]==sys.argv[1]][0]; print(json.load(urllib.request.urlopen(v["url"]))["downloads"]["client"]["url"])' "$VER")
           case "$u" in https://piston-data.mojang.com/*) ;; *) echo "unexpected $u"; exit 1 ;; esac
           echo "MC_CLIENT_URL=$u" >> "$GITHUB_ENV"; echo "$u"
-      - name: get.sh (download + unpack the latest release zip)
-        run: MC_NO_INSTALL=1 bash get.sh "$VER"
-      - name: Overlay the patcher scripts from this commit
-        run: bash src/apply-patcher.sh "$MC_DIR" "$VER"
-      - name: install.sh
-        run: '"$MC_DIR/install.sh" --yes'
+      - name: Package prompt on a terminal whose input is at EOF defaults to yes (pkg_install, no --yes)
+        run: |
+          sudo apt-get remove -y -qq figlet >/dev/null 2>&1 || true
+          script -qec 'bash -c "set -euo pipefail; WS=\$PWD; . src/lib/common.sh; YES=0; [ -t 0 ] && echo stdin-is-a-tty; pkg_install figlet figlet figlet figlet figlet figlet"' /dev/null < /dev/null
+          command -v figlet
+      - name: get.sh with no terminal at all (setsid, stdin /dev/null, no version, no --yes) -> defaults
+        run: |
+          d=$(mktemp -d); cd "$d"
+          setsid -w env MC_NO_INSTALL=1 bash "$GITHUB_WORKSPACE/get.sh" < /dev/null
+          test -x "$d/mc-1.19.4-web/install.sh"; rm -rf "$d"
+      - name: get.sh + install.sh end to end with no terminal (scripts from this commit via PATCHER_OVERLAY)
+        run: setsid -w env PATCHER_OVERLAY="$GITHUB_WORKSPACE/src" bash get.sh "$VER" < /dev/null
       - name: MakeDeploymentPackage.sh --js
         if: env.BUILD == 'true'
         run: '"$MC_DIR/MakeDeploymentPackage.sh" --js'

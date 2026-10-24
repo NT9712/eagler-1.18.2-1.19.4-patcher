@@ -136,8 +136,9 @@ pkg_install() {  # pkg_install <apt names> | <dnf names> | <pacman names> | <zyp
     command -v sudo >/dev/null || notice_exit "Need root to install: $names. Install sudo or run as root."
     SUDO=sudo
   fi
-  if [ "$YES" != 1 ] && [ -t 0 ]; then
-    read -r -p "Install missing packages with $mgr: $names ? [Y/n] " a; case "$a" in n*|N*) notice_exit "Missing dependencies: $names" ;; esac
+  if [ "$YES" != 1 ] && [ "${PATCHER_YES:-0}" != 1 ] && [ -t 0 ]; then
+    local a=""; read -r -p "Install missing packages with $mgr: $names ? [Y/n] " a || a=y   # EOF = default (yes)
+    case "$a" in n*|N*) notice_exit "Missing dependencies: $names" ;; esac
   fi
   step "Installing $names ($mgr)"
   case $mgr in
