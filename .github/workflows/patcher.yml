@@ -16,9 +16,6 @@ on:
         default: true
 permissions:
   contents: read
-concurrency:
-  group: patcher-${{ github.ref }}
-  cancel-in-progress: true
 env:
   BUILD: ${{ github.event_name == 'push' || inputs.build }}
 
@@ -111,7 +108,7 @@ jobs:
       - name: get.sh with no terminal at all (setsid, stdin /dev/null, no version, no --yes) -> defaults
         run: |
           d=$(mktemp -d); cd "$d"
-          setsid -w env MC_NO_INSTALL=1 bash "$GITHUB_WORKSPACE/get.sh" < /dev/null
+          setsid -w env -u MC_DIR MC_NO_INSTALL=1 bash "$GITHUB_WORKSPACE/get.sh" < /dev/null
           test -x "$d/mc-1.19.4-web/install.sh"; rm -rf "$d"
       - name: get.sh + install.sh end to end with no terminal (scripts from this commit via PATCHER_OVERLAY)
         run: setsid -w env PATCHER_OVERLAY="$GITHUB_WORKSPACE/src" bash get.sh "$VER" < /dev/null
